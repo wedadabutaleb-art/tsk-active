@@ -1,4 +1,4 @@
-<!doctype html>
+ت<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -168,6 +168,7 @@ select{background:#071012;color:#fff;border:1px solid #29383b;border-radius:10px
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDm9Ekyv8KX5bL-9WAqWn8aCms1WgBU6Gk",
@@ -195,14 +196,16 @@ function localLoad(){tasks=JSON.parse(localStorage.getItem("tsk_tasks")||"null")
 function localSave(){localStorage.setItem("tsk_tasks",JSON.stringify(tasks));localStorage.setItem("tsk_team",JSON.stringify(team))}
 function setSync(ok,msg){online=ok;const el=document.getElementById("syncStatus");el.textContent=(ok?"🟢 ":"🟡 ")+msg;el.classList.toggle("online",ok);document.getElementById("settingsSync").textContent=msg}
 try{
- firebase.initializeApp(firebaseConfig); db=firebase.database();
+ firebase.initializeApp(firebaseConfig);
+firebase.auth().signInAnonymously().then(()=>{db=firebase.database();
  const root=db.ref("tskActive");
  root.child("team").on("value",s=>{const v=s.val();if(v) team=Object.values(v); else root.child("team").set(initialTeam);fillAssignees();renderAll()});
  root.child("tasks").on("value",s=>{const v=s.val();if(v) tasks=Object.values(v); else root.child("tasks").set(Object.fromEntries(initialTasks.map(t=>[t.id,t])));renderAll();setSync(true,"متصل بـ Firebase — مزامنة مباشرة")});
- db.ref(".info/connected").on("value",s=>{if(s.val()===true)setSync(true,"متصل بـ Firebase — مزامنة مباشرة");else setSync(false,"غير متصل — سيتم الحفظ محليًا")});
+ db.ref(".info/connected").on("value",s=>{if(s.val()===true)setSync(true,"متصل بـ Firebase — مزامنة مباشرة");else setSync(false,"غير متصل — سيتم الحفظ db.ref(".info/connected").on(...);
+});
 }catch(e){console.error(e);setSync(false,"تعذر الاتصال — وضع محلي");localLoad()}
-setTimeout(()=>{if(!tasks.length)localLoad()},2200);
 
+setTimeout(()=>{if(!tasks.length)localLoad()},2200);
 function saveTask(t){t.updatedAt=Date.now();if(online&&db)db.ref("tskActive/tasks/"+t.id).set(t);else{const i=tasks.findIndex(x=>x.id===t.id);if(i>=0)tasks[i]=t;else tasks.push(t);localSave();renderAll()}}
 function removeTask(id){if(!confirm("حذف هذه المهمة؟"))return;if(online&&db)db.ref("tskActive/tasks/"+id).remove();else{tasks=tasks.filter(t=>t.id!==id);localSave();renderAll()}}
 function addMember(name){if(team.includes(name))return alert("الاسم موجود بالفعل");if(online&&db)db.ref("tskActive/team").set([...team,name]);else{team.push(name);localSave();renderAll()}}
